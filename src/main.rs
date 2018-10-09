@@ -82,11 +82,27 @@ fn main() -> Result<(), BuyError> {
         Err(e) => return Err(BuyError::GtkLaunch(e)),
     };
     application.connect_startup(move |app| {
-        // FIXME why does adding .clone() fix this?
-        build_ui(app, file.clone())
-
-        // FIXME With a change to build_ui below, this also fixes things, why?
-        // build_ui(app, &file)
+        // Story time, since I was stumped. Why do we need to pass in
+        // a reference to the file here? Why not pass the file itself?
+        // Alternatively, we could do file.clone() here, but why is
+        // _that_ necessary?
+        //
+        // Without one of those changes, I get the error message:
+        //
+        // > cannot move out of captured outer variable in an `Fn` closure
+        //
+        // Eventually I found this link:
+        //
+        // https://stackoverflow.com/questions/33662098/cannot-move-out-of-captured-outer-variable-in-an-fn-closure
+        //
+        // Which provides the missing piece: an `Fn` closure can be
+        // called multiple times. Therefore, with a non-reference and
+        // no clone, the first call to this closure will pass
+        // ownership of the single copy of `file` to `build_ui`, and
+        // later calls won't have it available. When we pass by
+        // reference, the closure itself retains ownership. When we
+        // clone, then each call gets its own copy.
+        build_ui(app, &file)
     });
     application.connect_activate(|_| {});
     application.run(&std::env::args().collect::<Vec<_>>());
@@ -94,7 +110,7 @@ fn main() -> Result<(), BuyError> {
     Ok(())
 }
 
-fn build_ui(application: &gtk::Application, file_cell: Rc<RefCell<File>>) {
+fn build_ui(application: &gtk::Application, file_cell: &Rc<RefCell<File>>) {
     let expenses = vec![Expense::Shufersal, Expense::KeterHabasar, Expense::TalTavlinim];
     let window = gtk::ApplicationWindow::new(application);
     window.set_title("Buy stuff, mostly food");
