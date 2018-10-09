@@ -119,16 +119,20 @@ fn build_ui(application: &gtk::Application, file_cell: Rc<RefCell<File>>) {
         let spin = spin.clone();
         let file_cell = file_cell.clone();
         button.connect_clicked(move |_button| {
-            let msg = match file_cell.try_borrow_mut() {
-                Ok(mut file) => match spin.get_text() {
-                    None => String::from("No amount available"),
-                    Some(amount) => match e.fmt(&mut *file, &amount, time::now()) {
-                        Ok(()) => String::from("Transaction added"),
-                        Err(e) => format!("Could not write to the file: {}", e),
-                    }
-                },
-                Err(e) => format!("Could not borrow the file: {}", e),
-            };
+            let msg = (|| {
+                let mut file = match file_cell.try_borrow_mut() {
+                    Ok(mut file) => file,
+                    Err(e) => return format!("Could not borrow the file: {}", e),
+                };
+                let amount = match spin.get_text() {
+                    None => return String::from("No amount available"),
+                    Some(amount) => amount
+                };
+                match e.fmt(&mut *file, &amount, time::now()) {
+                    Ok(()) => String::from("Transaction added"),
+                    Err(e) => format!("Could not write to the file: {}", e),
+                }
+            })();
             println!("{}", msg); // FIXME message box
         });
         container.add(&button);
