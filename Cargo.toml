@@ -5,3 +5,5 @@ authors = ["Michael Snoyman <michael@snoyman.com>"]
 
 [dependencies]
 time = "0.1.40"
+gtk = "0.5"
+gio = "0.5"

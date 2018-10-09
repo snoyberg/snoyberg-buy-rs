@@ -1,4 +1,12 @@
 extern crate time;
+extern crate gtk;
+extern crate gio;
+
+use gtk::prelude::*;
+use gio::prelude::*;
+use std::fs::File;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[derive(Debug)]
 enum BuyError {
@@ -57,7 +65,7 @@ impl Expense {
         }
     }
 
-    fn fmt<F>(&self, fmt: &mut F, amount: u32, now: time::Tm) -> Result<(), std::io::Error>
+    fn fmt<F>(&self, fmt: &mut F, amount: &str, now: time::Tm) -> Result<(), std::io::Error>
     where
         F: std::io::Write,
     {
@@ -77,19 +85,81 @@ impl Expense {
 
 fn main() -> Result<(), BuyError> {
     let ledger_file = get_ledger_file()?;
+    /*
     let (_exename, expense_str, amount_str) = require_three(std::env::args())?;
     let expense = Expense::parse(expense_str)?;
     let amount = match u32::from_str_radix(&amount_str, 10) {
         Ok(amount) => amount,
         Err(_) => return Err(BuyError::InvalidAmount(amount_str)),
     };
+    */
 
+    /*
     let mut options = std::fs::OpenOptions::new();
-    let mut file = options.append(true).open(ledger_file)?;
+    let file = Rc::new(RefCell::new(options.append(true).open(ledger_file)?));
+    */
 
-    expense.fmt(&mut file, amount, time::now())?;
+    //expense.fmt(&mut file, amount, time::now())?;
+
+    let application = gtk::Application::new("com.github.snoyberg.snoyberg-buy-rs",gio::ApplicationFlags::empty()).unwrap(); // FIXME
+    application.connect_startup(move |app| {
+        let ledger_file = get_ledger_file().unwrap();
+        let mut options = std::fs::OpenOptions::new();
+        let file = Rc::new(RefCell::new(options.append(true).open(ledger_file).unwrap()));
+        build_ui(app, file)
+    });
+    application.connect_activate(|_| {});
+    application.run(&std::env::args().collect::<Vec<_>>());
 
     Ok(())
+}
+
+fn build_ui(application: &gtk::Application, file_cell: Rc<RefCell<File>>) {
+    let expenses = vec![Expense::Shufersal, Expense::KeterHabasar, Expense::TalTavlinim];
+    let window = gtk::ApplicationWindow::new(application);
+    window.set_title("Buy stuff, mostly food");
+    window.set_border_width(10);
+    window.set_position(gtk::WindowPosition::Center);
+    window.set_default_size(350, 70 + (expenses.len() as i32) * 50);
+
+    // FIXME Cmd-Q handling
+    // FIXME should pop up over other apps (focus stealing?)
+
+    window.connect_delete_event(move |win, _| {
+        win.destroy();
+        Inhibit(false)
+    });
+
+    let container = gtk::Box::new(gtk::Orientation::Vertical, 5);
+
+    let label = gtk::Label::new("Amount");
+    container.add(&label);
+
+    let spin = gtk::SpinButton::new_with_range(0.0, 10000000.0, 0.01);
+    container.add(&spin);
+
+    for e in expenses.into_iter() {
+        let button = gtk::Button::new_with_label(e.desc());
+        let spin = spin.clone();
+        let file_cell = file_cell.clone();
+        button.connect_clicked(move |_button| {
+            let msg = match file_cell.try_borrow_mut() {
+                Ok(mut file) => match spin.get_text() {
+                    None => String::from("No amount available"),
+                    Some(amount) => match e.fmt(&mut *file, &amount, time::now()) {
+                        Ok(()) => String::from("Transaction added"),
+                        Err(e) => format!("Could not write to the file: {}", e),
+                    }
+                },
+                Err(e) => format!("Could not borrow the file: {}", e),
+            };
+            println!("{}", msg); // FIXME message box
+        });
+        container.add(&button);
+    }
+
+    window.add(&container);
+    window.show_all();
 }
 
 const LEDGER_VAR: &'static str = "LEDGER_FILE";
