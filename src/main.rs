@@ -73,21 +73,20 @@ impl Expense {
 }
 
 fn main() -> Result<(), BuyError> {
-    /*
     let ledger_file = get_ledger_file()?;
     let mut options = std::fs::OpenOptions::new();
     let file = Rc::new(RefCell::new(options.append(true).open(ledger_file)?));
-    */
 
     let application = match gtk::Application::new("com.github.snoyberg.snoyberg-buy-rs",gio::ApplicationFlags::empty()) {
         Ok(app) => app,
         Err(e) => return Err(BuyError::GtkLaunch(e)),
     };
     application.connect_startup(move |app| {
-        let ledger_file = get_ledger_file().unwrap();
-        let mut options = std::fs::OpenOptions::new();
-        let file = Rc::new(RefCell::new(options.append(true).open(ledger_file).unwrap()));
-        build_ui(app, file)
+        // FIXME why does adding .clone() fix this?
+        build_ui(app, file.clone())
+
+        // FIXME With a change to build_ui below, this also fixes things, why?
+        // build_ui(app, &file)
     });
     application.connect_activate(|_| {});
     application.run(&std::env::args().collect::<Vec<_>>());
