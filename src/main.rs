@@ -117,6 +117,7 @@ fn build_ui(application: &gtk::Application, file_cell: Rc<RefCell<File>>) {
     for e in expenses.into_iter() {
         let button = gtk::Button::new_with_label(e.desc());
         let spin = spin.clone();
+        let window = window.clone();
         let file_cell = file_cell.clone();
         button.connect_clicked(move |_button| {
             let msg = (|| {
@@ -133,7 +134,14 @@ fn build_ui(application: &gtk::Application, file_cell: Rc<RefCell<File>>) {
                     Err(e) => format!("Could not write to the file: {}", e),
                 }
             })();
-            println!("{}", msg); // FIXME message box
+            let dialog = gtk::MessageDialog::new(
+                Some(&window),
+                gtk::DialogFlags::empty(),
+                gtk::MessageType::Info,
+                gtk::ButtonsType::Ok,
+                &msg);
+            dialog.run();
+            dialog.destroy();
         });
         container.add(&button);
     }
