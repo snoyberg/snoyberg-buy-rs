@@ -130,7 +130,7 @@ fn build_ui(application: &gtk::Application, file_cell: Rc<RefCell<File>>) {
                     Some(amount) => amount
                 };
                 match e.fmt(&mut *file, &amount, time::now()) {
-                    Ok(()) => String::from("Transaction added"),
+                    Ok(()) => format!("Spent ₪{} on {}", &amount, e.desc()),
                     Err(e) => format!("Could not write to the file: {}", e),
                 }
             })();
