@@ -7,3 +7,4 @@ authors = ["Michael Snoyman <michael@snoyman.com>"]
 time = "0.1.40"
 gtk = "0.5"
 gio = "0.5"
+glib = "0.6"

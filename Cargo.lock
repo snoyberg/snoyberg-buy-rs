@@ -19,6 +19,7 @@ name = "buy"
 version = "0.1.0"
 dependencies = [
  "gio 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "glib 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "gtk 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "time 0.1.40 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

@@ -1,6 +1,7 @@
 extern crate time;
 extern crate gtk;
 extern crate gio;
+extern crate glib;
 
 use gtk::prelude::*;
 use gio::prelude::*;
@@ -12,6 +13,7 @@ use std::rc::Rc;
 enum BuyError {
     MissingEnvVar(&'static str, std::env::VarError),
     IO(std::io::Error),
+    GtkLaunch(glib::error::BoolError),
 }
 
 impl From<std::io::Error> for BuyError {
@@ -77,7 +79,10 @@ fn main() -> Result<(), BuyError> {
     let file = Rc::new(RefCell::new(options.append(true).open(ledger_file)?));
     */
 
-    let application = gtk::Application::new("com.github.snoyberg.snoyberg-buy-rs",gio::ApplicationFlags::empty()).unwrap(); // FIXME
+    let application = match gtk::Application::new("com.github.snoyberg.snoyberg-buy-rs",gio::ApplicationFlags::empty()) {
+        Ok(app) => app,
+        Err(e) => return Err(BuyError::GtkLaunch(e)),
+    };
     application.connect_startup(move |app| {
         let ledger_file = get_ledger_file().unwrap();
         let mut options = std::fs::OpenOptions::new();
