@@ -11,10 +11,6 @@ use std::rc::Rc;
 #[derive(Debug)]
 enum BuyError {
     MissingEnvVar(&'static str, std::env::VarError),
-    InsufficientArgs(usize),
-    TooManyArgs(usize),
-    InvalidExpense(String),
-    InvalidAmount(String),
     IO(std::io::Error),
 }
 
@@ -32,15 +28,6 @@ enum Expense {
 }
 
 impl Expense {
-    fn parse(s: String) -> Result<Expense, BuyError> {
-        match s.as_ref() {
-            "shufersal" => Ok(Expense::Shufersal),
-            "keter" => Ok(Expense::KeterHabasar),
-            "tal" => Ok(Expense::TalTavlinim),
-            _ => Err(BuyError::InvalidExpense(s)),
-        }
-    }
-
     fn desc(&self) -> &'static str {
         match self {
             Expense::Shufersal => "Shufersal",
@@ -84,22 +71,11 @@ impl Expense {
 }
 
 fn main() -> Result<(), BuyError> {
+    /*
     let ledger_file = get_ledger_file()?;
-    /*
-    let (_exename, expense_str, amount_str) = require_three(std::env::args())?;
-    let expense = Expense::parse(expense_str)?;
-    let amount = match u32::from_str_radix(&amount_str, 10) {
-        Ok(amount) => amount,
-        Err(_) => return Err(BuyError::InvalidAmount(amount_str)),
-    };
-    */
-
-    /*
     let mut options = std::fs::OpenOptions::new();
     let file = Rc::new(RefCell::new(options.append(true).open(ledger_file)?));
     */
-
-    //expense.fmt(&mut file, amount, time::now())?;
 
     let application = gtk::Application::new("com.github.snoyberg.snoyberg-buy-rs",gio::ApplicationFlags::empty()).unwrap(); // FIXME
     application.connect_startup(move |app| {
@@ -168,30 +144,6 @@ fn get_ledger_file() -> Result<String, BuyError> {
     std::env::var(LEDGER_VAR).map_err(|e| BuyError::MissingEnvVar(LEDGER_VAR, e))
 }
 
-fn require_three<I>(mut iter: I) -> Result<(String, String, String), BuyError>
-where
-    I: Iterator<Item = String>,
-{
-    let x = match iter.next() {
-        Some(x) => x,
-        None => return Err(BuyError::InsufficientArgs(0)),
-    };
-    let y = match iter.next() {
-        Some(y) => y,
-        None => return Err(BuyError::InsufficientArgs(1)),
-    };
-    let z = match iter.next() {
-        Some(z) => z,
-        None => return Err(BuyError::InsufficientArgs(2)),
-    };
-    let rest = iter.count();
-    if rest == 0 {
-        Ok((x, y, z))
-    } else {
-        Err(BuyError::TooManyArgs(rest + 3))
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -213,42 +165,10 @@ mod test {
     }
 
     #[test]
-    fn test_require_three() {
-        assert_eq!(
-            require_three(vec!["1", "2", "3"].into_iter().map(|s| String::from(s))).unwrap(),
-            ("1".to_string(), "2".to_string(), "3".to_string())
-        );
-        match require_three((vec![] as Vec<String>).into_iter()) {
-            Err(BuyError::InsufficientArgs(0)) => (),
-            x => panic!("{:?}", x),
-        }
-        match require_three(vec!["1"].into_iter().map(|s| String::from(s))) {
-            Err(BuyError::InsufficientArgs(1)) => (),
-            x => panic!("{:?}", x),
-        }
-        match require_three(
-            vec!["1", "2", "3", "4"]
-                .into_iter()
-                .map(|s| String::from(s)),
-        ) {
-            Err(BuyError::TooManyArgs(4)) => (),
-            x => panic!("{:?}", x),
-        }
-    }
-
-    #[test]
-    fn test_expense_parse() {
-        assert_eq!(
-            Expense::parse("shufersal".to_string()).unwrap(),
-            Expense::Shufersal
-        );
-    }
-
-    #[test]
     fn test_fmt() {
         let mut vec = vec![];
         let tm = time::at(time::Timespec::new(0, 0));
-        Expense::KeterHabasar.fmt(&mut vec, 100, tm).unwrap();
+        Expense::KeterHabasar.fmt(&mut vec, "100", tm).unwrap();
         let s = String::from_utf8(vec).unwrap();
         assert_eq!(s, "\n1970/01/01 Keter Habasar\n    expenses:food  ₪100\n    liability:credit card:fibi:shufersal\n");
     }
