@@ -138,10 +138,10 @@ fn build_ui(application: &gtk::Application, file_cell: &Rc<RefCell<File>>) {
     let label = gtk::Label::new("Amount");
     container.add(&label);
 
-    let spin = gtk::SpinButton::new_with_range(0.0, 10000000.0, 0.01);
+    let spin = gtk::SpinButton::new_with_range(0.0, 10_000_000.0, 0.01);
     container.add(&spin);
 
-    for e in expenses.into_iter() {
+    for e in expenses {
         let button = gtk::Button::new_with_label(e.desc());
         let spin = spin.clone();
         let window = window.clone();
@@ -178,7 +178,7 @@ fn build_ui(application: &gtk::Application, file_cell: &Rc<RefCell<File>>) {
     window.show_all();
 }
 
-const LEDGER_VAR: &'static str = "LEDGER_FILE";
+const LEDGER_VAR: &str = "LEDGER_FILE";
 
 fn get_ledger_file() -> Result<String, BuyError> {
     std::env::var(LEDGER_VAR).map_err(|e| BuyError::MissingEnvVar(LEDGER_VAR, e))
