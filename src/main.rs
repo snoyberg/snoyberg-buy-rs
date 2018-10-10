@@ -1,12 +1,12 @@
-extern crate time;
-extern crate gtk;
 extern crate gio;
 extern crate glib;
+extern crate gtk;
+extern crate time;
 
-use gtk::prelude::*;
 use gio::prelude::*;
-use std::fs::File;
+use gtk::prelude::*;
 use std::cell::RefCell;
+use std::fs::File;
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -77,7 +77,10 @@ fn main() -> Result<(), BuyError> {
     let mut options = std::fs::OpenOptions::new();
     let file = Rc::new(RefCell::new(options.append(true).open(ledger_file)?));
 
-    let application = match gtk::Application::new("com.github.snoyberg.snoyberg-buy-rs",gio::ApplicationFlags::empty()) {
+    let application = match gtk::Application::new(
+        "com.github.snoyberg.snoyberg-buy-rs",
+        gio::ApplicationFlags::empty(),
+    ) {
         Ok(app) => app,
         Err(e) => return Err(BuyError::GtkLaunch(e)),
     };
@@ -111,7 +114,11 @@ fn main() -> Result<(), BuyError> {
 }
 
 fn build_ui(application: &gtk::Application, file_cell: &Rc<RefCell<File>>) {
-    let expenses = vec![Expense::Shufersal, Expense::KeterHabasar, Expense::TalTavlinim];
+    let expenses = vec![
+        Expense::Shufersal,
+        Expense::KeterHabasar,
+        Expense::TalTavlinim,
+    ];
     let window = gtk::ApplicationWindow::new(application);
     window.set_title("Buy stuff, mostly food");
     window.set_border_width(10);
@@ -147,7 +154,7 @@ fn build_ui(application: &gtk::Application, file_cell: &Rc<RefCell<File>>) {
                 };
                 let amount = match spin.get_text() {
                     None => return String::from("No amount available"),
-                    Some(amount) => amount
+                    Some(amount) => amount,
                 };
                 match e.fmt(&mut *file, &amount, time::now()) {
                     Ok(()) => format!("Spent ₪{} on {}", &amount, e.desc()),
@@ -159,7 +166,8 @@ fn build_ui(application: &gtk::Application, file_cell: &Rc<RefCell<File>>) {
                 gtk::DialogFlags::empty(),
                 gtk::MessageType::Info,
                 gtk::ButtonsType::Ok,
-                &msg);
+                &msg,
+            );
             dialog.run();
             dialog.destroy();
         });
