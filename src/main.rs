@@ -48,6 +48,8 @@ impl Expense {
 
     fn source_account(&self) -> &'static str {
         match self {
+            // Looks like a bug, but it isn't. We use the same credit card at all three stores.
+            // Parameterized in case we add more expenses in the future which use different cards.
             Expense::Shufersal => "liability:credit card:fibi:shufersal",
             Expense::KeterHabasar => "liability:credit card:fibi:shufersal",
             Expense::TalTavlinim => "liability:credit card:fibi:shufersal",
